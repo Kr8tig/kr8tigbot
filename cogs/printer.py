@@ -78,13 +78,24 @@ class PrinterAPI:
         return response
 
     @property
+    def is_printing(self):
+        url = self._url_builder("printer")
+        response = self.session.get(url).json()
+        try:
+            if response["state"]["flags"]["printing"]:
+                return True
+            else:
+                return False
+        except KeyError:
+            raise PrinterDied
+
+    @property
     def status(self):
         url = self._url_builder("connection")
 
         response = self.session.get(url).json()
 
         return response["current"]["state"]
-
 
     @property
     def printer(self):
@@ -115,26 +126,22 @@ class Printer(commands.Cog):
         self.api_key = "2D6BFDC3D5F6479D89732410EAC9441B"
         self.p = PrinterAPI(self.api_key)
 
-            
-
     @commands.command(name = "status")
     async def status(self, ctx):
         now = datetime.now() + timedelta(hours = 1)
-        printer = PrinterAPI(self.api_key)
-
         emb = discord.Embed(title = "*Printer Status*", description = "ehhhh eehhhhh ehmmm ehhh erhhhh euhhh ehhhm")
         
-        if printer.status != "Closed":
-            if not printer.printer["state"]["flags"]["printing"]:
+        if self.p.status != "Closed":
+            if not self.p.printer["state"]["flags"]["printing"]:
                 emb.color = 0x12cc15
                 emb.add_field(name="__Status__:", value="ready :D", inline=False)
-                emb.add_field(name="__Temperatuur__:", value=f"**Bed:**\n{printer.printer['temperature']['bed']['actual']}\n\n**Printkop:**\n{printer.printer['temperature']['tool0']['actual']}", inline=False)
+                emb.add_field(name="__Temperatuur__:", value=f"**Bed:**\n{self.p.printer['temperature']['bed']['actual']}\n\n**Printkop:**\n{self.p.printer['temperature']['tool0']['actual']}", inline=False)
                 emb.set_footer(text="Copyright © 2022 P!ngStudios, inc. All Rights Reserved")     
             else:
                 emb.color = 0xed7b09
-                emb.add_field(name="__Job Info__:", value=f"**File:**\n{printer.job['job']['file']['name']}\n\n**Start Tijd:**\n{(now - timedelta(printer.job['progress']['printTime'])).strftime('%m/%d/%Y, %H:%M:%S')}", inline=False)
-                emb.add_field(name="__Progress__:", value=f"**Totale Print Tijd:**\n{str(timedelta(seconds = (printer.job['progress']['printTimeLeft'] + printer.job['progress']['printTime'])))}\n\n**Print Tijd Over:**\n{str(timedelta(seconds = printer.job['progress']['printTimeLeft']))}", inline=True)
-                emb.add_field(name="__Temperatuur__:", value=f"**Bed:**\n{printer.printer['temperature']['bed']['actual']}\n\n**Printkop:**\n{printer.printer['temperature']['tool0']['actual']}", inline=True)
+                emb.add_field(name="__Job Info__:", value=f"**File:**\n{self.p.job['job']['file']['name']}\n\n**Start Tijd:**\n{(now - timedelta(seconds=self.p.job['progress']['printTime'])).strftime('%m/%d/%Y, %H:%M:%S')}", inline=False)
+                emb.add_field(name="__Progress__:", value=f"**Totale Print Tijd:**\n{str(timedelta(seconds = (self.p.job['progress']['printTimeLeft'] + self.p.job['progress']['printTime'])))}\n\n**Print Tijd Over:**\n{str(timedelta(seconds = self.p.job['progress']['printTimeLeft']))}", inline=True)
+                emb.add_field(name="__Temperatuur__:", value=f"**Bed:**\n{self.p.printer['temperature']['bed']['actual']}\n\n**Printkop:**\n{self.p.printer['temperature']['tool0']['actual']}", inline=True)
                 emb.set_footer(text="Copyright © 2022 P!ngStudios, inc. All Rights Reserved")
         else:
             emb.color = 0xd11608
@@ -146,11 +153,10 @@ class Printer(commands.Cog):
     @commands.command(name = "connect")
     @commands.has_role("Printer Operator")
     async def connect(self, ctx):
-        p = PrinterAPI(self.api_key)
-        if p.status != "Operational":
-            p.connect()
+        if self.p.status != "Operational":
+            self.p.connect()
             await asyncio.sleep(1)
-            if p.status == "Operational":
+            if self.p.status == "Operational":
                 await ctx.channel.send("```\n... P R I N T E R  C O N N E C T E D ...\n```")
             else:
                 await ctx.channel.send("You might wanna just turn the printer on first, that probably would help i think.")
@@ -160,12 +166,11 @@ class Printer(commands.Cog):
     @commands.command(name = "disconnect")
     @commands.has_role("Printer Operator")
     async def disconnect(self, ctx):
-        p = PrinterAPI(self.api_key)
-        if p.status == "Operational":
+        if self.p.status == "Operational":
             
-            if not p.printer["state"]["flags"]["printing"]: 
+            if not self.p.printer["state"]["flags"]["printing"]: 
         
-                p.disconnect()
+                self.p.disconnect()
                 await ctx.channel.send("```\n... P R I N T E R  D I S C O N N E C T E D ...\n```")
             else:
                 await ctx.channel.send("Are you trying to sabotage stuff or are you just stupidly unaware?")
@@ -176,16 +181,15 @@ class Printer(commands.Cog):
     @commands.command(name = "cancel")
     @commands.has_role("Printer Operator")
     async def cancel(self, ctx):
-        p = PrinterAPI(self.api_key)
         try: 
-            if p.printer["state"]["flags"]["printing"]:
+            if self.p.printer["state"]["flags"]["printing"]:
                 emb = discord.Embed(title = "Cancel Receipt", description = "You canceled a job. You menace.", color = 0xbf0a67)
-                emb.add_field(name = "__Canceled File__:", value = p.job['job']['file']['name'], inline = False)
-                emb.add_field(name = "__Time Wasted__:", value = str(timedelta(seconds = p.job["progress"]["printTime"])), inline = False)
-                p.cancel()
+                emb.add_field(name = "__Canceled File__:", value = self.p.job['job']['file']['name'], inline = False)
+                emb.add_field(name = "__Time Wasted__:", value = str(timedelta(seconds = self.p.job["progress"]["printTime"])), inline = False)
+                self.p.cancel()
                 await ctx.channel.send(embed = emb)
                 await asyncio.sleep(10)
-                p.move(z=40)
+                self.p.move(z=40)
             else:
                 await ctx.channel.send("You might wanna start printing something before canceling it, would be kinda pointless otherwise.")
         except KeyError: 
@@ -194,11 +198,10 @@ class Printer(commands.Cog):
     @commands.command(name = "move")
     @commands.has_role("Printer Operator")
     async def move(self, ctx, x=0, y=0, z=0):
-        p = PrinterAPI(self.api_key)
         try:
-            if not p.printer["state"]["flags"]["printing"]:
+            if not self.p.printer["state"]["flags"]["printing"]:
                 
-                p.move(x=int(x),y=int(y),z=int(abs(z)))
+                self.p.move(x=int(x),y=int(y),z=int(abs(z)))
                 await ctx.channel.send(f"Moved the print head by: ```\nleft/right: {x}\nfront/back: {y}\nup: {abs(z)}\n```")
                 
         except PrinterDied as e:
@@ -207,10 +210,9 @@ class Printer(commands.Cog):
     @commands.command(name = "temp")
     @commands.has_role("Printer Operator")
     async def temp(self, ctx, temp=0):
-        p = PrinterAPI(self.api_key)
         try:
-            if not p.printer["state"]["flags"]["printing"]:
-                p.heat(int(temp))
+            if not self.p.printer["state"]["flags"]["printing"]:
+                self.p.heat(int(temp))
                 await ctx.channel.send(f"changing the temperature to {temp} degrees")
                 
         except PrinterDied as e:
@@ -281,3 +283,4 @@ class Printer(commands.Cog):
 
 def setup(bot):
   bot.add_cog(Printer(bot))
+  
