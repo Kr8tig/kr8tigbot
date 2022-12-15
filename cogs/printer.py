@@ -4,6 +4,7 @@ import asyncio
 import requests
 from discord.ext import commands
 from discord.ext.commands.errors import BadArgument
+import random
 
 
 class PrinterDied(Exception):
@@ -123,8 +124,33 @@ class PrinterAPI:
 class Printer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_key = "2D6BFDC3D5F6479D89732410EAC9441B"
+        self.api_key = "1C6E30FB61474C00A2CAB8D3199B3555"
         self.p = PrinterAPI(self.api_key)
+        self.task = self.bot.loop.create_task(self.is_printing_task())
+
+    async def notify_task(self, author):
+        await self.bot.wait_until_ready()  # Make sure your guild cache is ready so the channel can be found via get_channel
+        # channel = bot.get_channel(channel_id) # Note: It's more efficient to do bot.get_guild(guild_id).get_channel(channel_id) as there's less looping involved, but just get_channel still works fine
+        while self.p.is_printing:
+            await asyncio.sleep(10)
+        await author.send("Print is klaar! :D uwu") 
+    
+    async def is_printing_task(self):
+        await self.bot.wait_until_ready()
+        while True:
+            try:
+                if self.p.is_printing:
+                    await self.bot.change_presence(activity = discord.Activity(type=0, name= f"OctoPrint printing: {self.p.job['job']['file']['name']} Time left:{str(timedelta(seconds = self.p.job['progress']['printTimeLeft']))}"))
+                    await asyncio.sleep(10)
+                    print("sleeping printing")
+                else:
+                    await self.bot.change_presence(activity = discord.Activity(type=2, name= "Bring me to life by Evanescence 🖤"))
+                    await asyncio.sleep(60)
+                    print("sleeping not printing")
+            except PrinterDied:
+                await self.bot.change_presence(activity = discord.Activity(type=2, name= "Bring me to life by Evanescence 🖤"))
+                await asyncio.sleep(120)
+                print("sleeping printer turned off")            
 
     @commands.command(name = "status")
     async def status(self, ctx):
@@ -261,23 +287,19 @@ class Printer(commands.Cog):
                 await ctx.channel.send("The printer in the middle of creating art, please do not disturb it any further and kindly go fuck yourself.")
 
         except PrinterDied as e:
-            await ctx.channel.send(e.message)   
+            await ctx.channel.send(e.message)
+    
+    @commands.command(name = "notify")
+    @commands.has_role("Printer Operator")
+    async def notify(self, ctx):
+        task = self.bot.loop.create_task(self.notify_task(ctx.author))
+        await ctx.channel.send("Ik slide in je dm's als de print klaar is uwu")
 
-    @commands.command(name = "test")
-    @commands.has_permissions(administrator=True) 
-    async def test(self, ctx):
-        await ctx.channel.send(f"temp: {self.p.printer['temperature']['tool0']['actual']}")
-
-        def check(author):
-            def inner_check(message):
-                if message.author == author and (message.content).lower() == "doorgaan":
-                    return True
-                else:
-                    return False
-            return inner_check
-        msg = await self.bot.wait_for("message", check=check(ctx.author), timeout=180)
-        if msg:
-            await ctx.channel.send("you done it")
+    @commands.command(name = "stijn")
+    # @commands.has_permissions(administrator=True) 
+    async def stijn(self, ctx):
+        stijnisms = ["Jongens, laten we een pijpbom maken", "Drugs????", "ReMarkt laat mij huilen", "Let's gooooooooooooo", "Gawdmotherfuckingdaymmm", "Ik zou vaker willen gaan scannen bij Remarkt :)"]
+        await ctx.channel.send(random.choice(stijnisms))
     
     
 
