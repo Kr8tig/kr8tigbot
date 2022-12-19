@@ -96,6 +96,22 @@ class Birthday(commands.Cog):
             print(traceback.format_exc())
             await ctx.send(f'Er is "iets" fout gegaan. Roep Hans maar en laat dit zien `{str(e)}`')
 
+    @birthday.command(name="edit")
+    async def edit(self, ctx, user:discord.Member, datum):
+        try:
+            data = self.read_json("verjaardagen.json")
+            gebruiker = self.get_user(data, str(user.id))
+
+            if gebruiker:
+                old_date = datetime.fromtimestamp(gebruiker["date"])
+                dag, maand, jaar = datum.split("-")
+                datum = datetime(day=int(dag), month=int(maand), year=int(jaar))
+                gebruiker["date"] = datum.timestamp()
+                await ctx.send(f"Geboortedatum van {user.name} veranderd van {old_date.day}-{old_date.month} naar {datum.day}-{datum.month}")
+        except Exception as e:
+            print(traceback.format_exc())
+            await ctx.send(f'Er is "iets" fout gegaan. Roep Hans maar en laat dit zien `{str(e)}`')
+
 
 def setup(bot):
   bot.add_cog(Birthday(bot))
