@@ -8,6 +8,7 @@ from discord.utils import get
 import json
 import sys
 import random
+import requests
 from datetime import time, datetime, timedelta
 
 from secret import TOKEN
@@ -18,7 +19,7 @@ bot.remove_command('help')
 
 
 WHEN = time(16, 00, 0)  # 12:00 PM
-channel_id = 984428278922235964 # Put your channel id here
+channel_id = 893402532154605598 # Put your channel id here
 
 
 @bot.event
@@ -85,6 +86,22 @@ async def on_message(message):
         await message.channel.send("Ikr, jij bent zo cool.")
   await bot.process_commands(message)
 
+@bot.command(name="meme")
+async def meme(ctx):
+  subreddit = "memes"
+  channel = bot.get_channel(893402532154605598)
+
+  # Set the URL for the Reddit API
+  url = f"https://www.reddit.com/r/{subreddit}/random.json"
+
+  # Send a request to the Reddit API to get a random post from the subreddit
+  response = requests.get(url, headers={"User-Agent": "MemeFetcherBot/1.0"})
+
+  # Get the data for the random post
+  data = response.json()[0]["data"]["children"][0]["data"]
+
+  # Send the random meme to the Discord channel
+  await channel.send(data["url"])
 
 @bot.command(name = "load")
 @commands.has_permissions(administrator=True)
