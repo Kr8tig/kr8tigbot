@@ -120,7 +120,7 @@ class Birthday(commands.Cog):
             await ctx.send(f'Er is "iets" fout gegaan. Roep Hans maar en laat dit zien `{str(e)}`')
 
     @birthday.command(name="edit")
-    async def edit(self, ctx, user: discord.Member, datum):
+    async def edit(self, ctx, user: discord.Member, datum: str):
         """Edit a user's birthday in the database"""
         try:
             # Read data from JSON file
@@ -173,6 +173,6 @@ class Birthday(commands.Cog):
             await ctx.send(f'Er is "iets" fout gegaan. Roep Hans maar en laat dit zien `{str(e)}`')
 
 
-def setup(bot):
-  bot.add_cog(Birthday(bot))
+async def setup(bot):
+  await bot.add_cog(Birthday(bot))
   

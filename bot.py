@@ -15,7 +15,6 @@ from secret import TOKEN
 
 
 bot = commands.Bot(command_prefix=".")
-bot.remove_command('help')
 
 
 WHEN = time(16, 00, 0)  # 12:00 PM
@@ -106,30 +105,36 @@ async def meme(ctx):
 @bot.command(name = "load")
 @commands.has_permissions(administrator=True)
 async def load(ctx, cog):
-  bot.load_extension(f"cogs.{cog}")
+  await bot.load_extension(f"cogs.{cog}")
   await ctx.channel.send(f"hey look, {cog} is back! i have nothing to do with it disappearing, trust me.")
 
 
 @bot.command(name = "unload")
 @commands.has_permissions(administrator=True)
 async def unload(ctx, cog):
-  bot.unload_extension(f"cogs.{cog}")
+  await bot.unload_extension(f"cogs.{cog}")
   await ctx.channel.send(f"{cog} has been unloaded, didnt like it anyways.")
 
 
 @bot.command(name = "reload")
 @commands.has_permissions(administrator=True)
 async def reload(ctx, cog):
-  bot.unload_extension(f"cogs.{cog}")
-  bot.load_extension(f"cogs.{cog}")
+  await bot.unload_extension(f"cogs.{cog}")
+  await bot.load_extension(f"cogs.{cog}")
   funi = random.choices([f"Reloaded cog: {cog}", f"eh so i think i just deleted {cog}... but hey, now you have something new to do!"], weights=(98, 2))
   await ctx.channel.send(funi[0])
 
 
-for L in os.listdir("./cogs"):
-  if L.endswith(".py") and L != "__init__.py":
-    bot.load_extension(f"cogs.{L[:-3]}")
+async def load_cogs():
+  for L in os.listdir("./cogs"):
+    if L.endswith(".py") and L != "__init__.py":
+      await bot.load_extension(f"cogs.{L[:-3]}")
 
 
-# bot.loop.create_task(background_task())
-bot.run(TOKEN)
+async def main():
+  async with bot:
+    await load_cogs()
+    await bot.start(TOKEN)
+
+
+asyncio.run(main())

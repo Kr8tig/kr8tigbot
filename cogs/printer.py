@@ -303,6 +303,6 @@ class Printer(commands.Cog):
     
     
 
-def setup(bot):
-  bot.add_cog(Printer(bot))
+async def setup(bot):
+  await bot.add_cog(Printer(bot))
   
