@@ -8,6 +8,8 @@ from cairosvg import svg2png
 
 
 class Chess(commands.Cog):
+    # TODO:: Mogelijkheid om iemand uit te dagen
+    #        Bij een globaal spel als je een zet doet met een kleur, die kleur toewijzen aan die persoon
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialiseert de Chess command.
@@ -75,6 +77,8 @@ class Chess(commands.Cog):
         Returns:
             True als de zet legaal is, False als de zet niet legaal is.
         """
+        # TODO:: checken of de koning schaak staat
+        #        checken of er schaakmat op het bord staat na elke zet
         try:
             # Probeert de zet te doen
             zet = board.push_san(move)
@@ -163,6 +167,7 @@ class Chess(commands.Cog):
         Args:
             ctx: De context van het discord bericht. (https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.Context)
         """
+        # TODO:: Group command maken met sub commands van zetten per stuk
         # Laadt het bord uit de JSON file
         board = self.load_board()
         # Genereert een lijst met SAN notatie zetten

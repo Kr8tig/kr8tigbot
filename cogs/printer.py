@@ -18,92 +18,186 @@ class PrinterAPI:
     base_url = "http://192.168.1.14/api/{}?apikey={}"
 
     def __init__(self, api_key) -> None:
+        """
+        Maakt verbinding met de OctoPrint API en geeft standaard functionaliteit.
+
+        Arguments:
+            api_key: Een authenticatie key verkregen door de OctoPrint Web interface.
+
+        Returns:
+            None
+        """
         self.api_key = api_key
         self.session = requests.Session()
 
-    def _url_builder(self, feature) -> str:
+    def _url_builder(self, feature: str) -> str:
+        """
+        Maakt de URL gebaseerd op welke functionaliteit de gebruiker nodig heeft.
+
+        Arguments:
+            feature: De functionaliteit zoals connection, printer of job
+
+        Returns:
+            De URL
+        """
         url = self.base_url.format(feature, self.api_key)
         return url
 
-    def connect(self):
-        url = self._url_builder("connection")
-        data = {"command": "connect"}
+    def connect(self) -> requests.Response:
+        """
+        Verbindt de printer met OctoPrint.
 
+        Arguments:
+            None
+
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
+        url = self._url_builder("connection")
+        # Connect payload voor de request
+        data = {"command": "connect"}
+        # POST request met de connect payload
         response = self.session.post(url, json=data)
         return response
     
-    def disconnect(self):
+    def disconnect(self) -> requests.Response:
+        """
+        Verbreekt de vervinding van de printer met OctoPrint.
+
+        Arguments:
+            None
+
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
         url = self._url_builder("connection")
+        # Disconnect payload voor de request
         data = {"command": "disconnect"}
-
+        # POST request met de disconnect payload
         response = self.session.post(url, json=data)
         return response
 
-    def cancel(self):
+    def cancel(self) -> requests.Response:
+        """
+        Stopt de huidige print job van de 3Dprinter.
+
+        Arguments:
+            None
+        
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
         url = self._url_builder("job")
+        # Cancel payload voor de request
         data = {"command": "cancel"}
-
+        # POST request met de cancel payload
         response = self.session.post(url, json=data)
         return response
 
-    def move(self, x:int=0, y:int=0, z:int=0):
+    def move(self, x:int=0, y:int=0, z:int=0) -> requests.Response:
+        """
+        Beweegt de printkop van de 3Dprinter.
+
+        Arguments:
+            x: Het X coördinaat van de printkop (links/rechts)
+            y: Het Y coördinaat van de printkop (achter/voren)
+            z: Het Z coördinaat van de printkop (boven/beneden)
+
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
         url = self._url_builder("printer/printhead")
+        # Jog payload voor de request
         data = {"command": "jog", "x":x, "y":y, "z":z}
-
+        # POST request met de jog payload
         response = self.session.post(url, json=data)
         return response
 
-    def home(self):
+    def home(self) -> requests.Response:
+        """
+        Brengt de printkop van de 3Dprinter naar de home positie.
+
+        Arguments:
+            None
+
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
         url = self._url_builder("printer/printhead")
-        data = {"command": "home", "axes": ["x", "y", "z"]}    
+        # Home payload voor de request
+        data = {"command": "home", "axes": ["x", "y", "z"]}  
+        # POST request met de home payload  
         response = self.session.post(url, json=data)
 
-    def heat(self, temp):
+    def heat(self, temp: int) -> requests.Response:
+        """
+        Verhit de printkop naar een gespecificeerde temperatuur.
+
+        Arguments:
+            temp: De gewenste temperatuur.
+
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
         url = self._url_builder("printer/tool")
+        # Target payload met temperatuur voor de request
         data = {
             "command":"target",
             "targets": {
                 "tool0":int(temp)
             }
         }
+        # POST request met de target payload
         response = self.session.post(url, json=data)
         return response
 
-    def piss(self, amount):
-        url =self._url_builder("printer/tool")
+    def extrude(self, amount: int) -> requests.Response:
+        """
+        Extrude een gespecificeerd aantal fillament in milimeters.
+
+        Arguments:
+            amount: De hoeveelheid fillament in milimeters.
+
+        Returns:
+            De response van OctoPrint i.e status, error etc.
+        """
+        url = self._url_builder("printer/tool")
+        # Extrude payload voor de request
         data = {
             "command":"extrude",
             "amount": int(amount)
         }
+        # POST request met de extrude payload
         response = self.session.post(url, json=data)
         return response
 
     @property
-    def is_printing(self):
+    def is_printing(self) -> bool:
         url = self._url_builder("printer")
+        # GET request om de JSON op te halen met printer info
         response = self.session.get(url).json()
         try:
+            # Checkt of de printer aan het printen is.
             if response["state"]["flags"]["printing"]:
                 return True
             else:
                 return False
+        # Als de printer uit staat geef een error
         except KeyError:
             raise PrinterDied
 
     @property
-    def status(self):
+    def status(self) -> dict:
         url = self._url_builder("connection")
-
+        # GET request om de connectie info op te halen
         response = self.session.get(url).json()
-
         return response["current"]["state"]
 
     @property
-    def printer(self):
+    def printer(self) -> dict:
         url = self._url_builder("printer")
-
+        # GET request om de printer info op te halen
         response = self.session.get(url).json()
-
         try:
             response["state"]
         except KeyError:
@@ -112,11 +206,10 @@ class PrinterAPI:
         return response
 
     @property
-    def job(self):
+    def job(self) -> dict:
         url = self._url_builder("job")
-
+        # GET request om de job info op te halen
         response = self.session.get(url).json()
-
         return response
     
 
@@ -129,8 +222,7 @@ class Printer(commands.Cog):
         self.task = self.bot.loop.create_task(self.is_printing_task())
 
     async def notify_task(self, author):
-        await self.bot.wait_until_ready()  # Make sure your guild cache is ready so the channel can be found via get_channel
-        # channel = bot.get_channel(channel_id) # Note: It's more efficient to do bot.get_guild(guild_id).get_channel(channel_id) as there's less looping involved, but just get_channel still works fine
+        await self.bot.wait_until_ready()
         while self.p.is_printing:
             await asyncio.sleep(10)
         await author.send("Print is klaar! :D uwu") 
@@ -265,7 +357,7 @@ class Printer(commands.Cog):
                 msg = await self.bot.wait_for("message", check=check(ctx.author), timeout=300)
 
                 if msg:
-                    self.p.piss(150)
+                    self.p.extrude(150)
                     await ctx.channel.send("My fillament is extruding UwU")
                     self.p.heat(0)
             else:
@@ -296,11 +388,9 @@ class Printer(commands.Cog):
         await ctx.channel.send("Ik slide in je dm's als de print klaar is uwu")
 
     @commands.command(name = "stijn")
-    # @commands.has_permissions(administrator=True) 
     async def stijn(self, ctx):
         stijnisms = ["Jongens, laten we een pijpbom maken", "Drugs????", "ReMarkt laat mij huilen", "Let's gooooooooooooo", "Gawdmotherfuckingdaymmm", "Ik zou vaker willen gaan scannen bij Remarkt :)"]
         await ctx.channel.send(random.choice(stijnisms))
-    
     
 
 async def setup(bot):

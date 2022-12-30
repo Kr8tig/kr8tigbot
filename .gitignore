@@ -3,3 +3,5 @@ tests.py
 .bot.py.swp
 /__pycache__
 __pycache__
+games.json
+verjaardagen.json

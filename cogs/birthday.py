@@ -47,7 +47,7 @@ class Birthday(commands.Cog):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             now = datetime.now()
-            # Check if it is midnight
+            # Check if it is the correct time
             if now.hour == 12 and now.minute == 15:
                 # Read the data from the JSON file
                 data = self.read_json("verjaardagen.json")
