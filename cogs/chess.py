@@ -4,7 +4,10 @@ from discord.ext import commands
 import chess
 import chess.svg
 import json
-from cairosvg import svg2png
+# from cairosvg import svg2png
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
+
 
 
 class Chess(commands.Cog):
@@ -149,8 +152,10 @@ class Chess(commands.Cog):
             # Haalt op wie er aan zet is na de zet
             turn = "Zwart" if board.turn else "Wit"
             # Haalt SVG representatie uit het bord en zet het om naar een PNG bestand
-            svg = chess.svg.board(board)
-            svg2png(bytestring=str(svg),write_to='board.png')
+            boardsvg = chess.svg.board(board, size=1100)
+            with open("board.svg", "w") as f:
+                f.write(boardsvg)
+            renderPM.drawToFile(svg2rlg("board.svg"), "board.png", fmt='PNG')
             # Stuurt een plaatje van het bord
             file = discord.File('board.png')
             await ctx.send(f"{turn} heeft {move} gezet")
@@ -188,8 +193,10 @@ class Chess(commands.Cog):
         # Haalt op wie er aan zet is
         turn = "Wit" if board.turn else "Zwart"
         # Haalt SVG representatie uit het bord en zet het om naar een PNG bestand
-        svg = chess.svg.board(board)
-        svg2png(bytestring=str(svg),write_to='board.png')
+        boardsvg = chess.svg.board(board, size=1100)
+        with open("board.svg", "w") as f:
+            f.write(boardsvg)
+        renderPM.drawToFile(svg2rlg("board.svg"), "board.png", fmt='PNG')
         # Stuurt een plaatje van het bord
         file = discord.File('board.png')
         await ctx.send(file=file)
@@ -212,7 +219,16 @@ class Chess(commands.Cog):
         # Schrijft de huidige stelling naar een JSON bestand
         self.save_board(game)
         await ctx.send("Het bord is gereset! Wit is aan zet")
-        
+
+    @commands.command(name="test")
+    async def test(self, ctx):
+        board = self.load_board()
+        boardsvg = chess.svg.board(board, size=1100)
+        with open("board.svg", "w") as f:
+            f.write(boardsvg)
+        renderPM.drawToFile(svg2rlg("board.svg"), "board.png", fmt='PNG')
+        file = discord.File('board.png')
+        await ctx.send(file=file)    
 
 async def setup(bot):
     await bot.add_cog(Chess(bot))

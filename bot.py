@@ -11,7 +11,7 @@ import random
 import requests
 from datetime import time, datetime, timedelta
 
-from secret import TOKEN2
+from secret import TOKEN
 
 
 bot = commands.Bot(command_prefix=".", intents=discord.Intents.all())
@@ -33,7 +33,7 @@ async def on_message(message):
   hans = 867378778341769247
   c = message.content
   c = c.lower()
-  msgs = ["ik win", "ik heb gewonnen", "ik ben de winnaar", "ik win ook", "ik heb ook gewonnen", "ik ben ook een winnaar"]
+  msgs = ["ik win", "ik heb gewonnen", "ik ben de winnaar", "ik heb ook gewonnen", "ik ben ook een winnaar"]
   for L in msgs:
     if L in c:
       if message.author.id != undergod and message.author.id != hans:
@@ -42,6 +42,9 @@ async def on_message(message):
         await message.channel.send("Ikr, jij bent zo cool.")
   await bot.process_commands(message)
 
+@bot.command()
+async def purge(ctx, number: int):
+    await ctx.channel.purge(limit=number+1)
 
 @bot.command(name="meme")
 async def meme(ctx):
@@ -93,7 +96,7 @@ async def load_cogs():
 async def main():
   async with bot:
     await load_cogs()
-    await bot.start(TOKEN2)
+    await bot.start(TOKEN)
 
 
 asyncio.run(main())
